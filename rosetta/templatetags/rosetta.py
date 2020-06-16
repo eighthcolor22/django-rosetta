@@ -1,4 +1,6 @@
 from django import template
+from django.template.loader_tags import do_include
+from django.template.loader import get_template
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 import re
@@ -69,3 +71,35 @@ class IncrNode(template.Node):
 def is_fuzzy(message):
     return message and hasattr(message, 'flags') and 'fuzzy' in message.flags
 is_fuzzy = register.filter(is_fuzzy)
+
+
+def template_exists(template_name):
+    try:
+        get_template(template_name)
+        return True
+    except template.TemplateDoesNotExist:
+        return 
+template_exists = register.filter(template_exists)
+
+
+class TryIncludeNode(template.Node):
+    """
+    A Node that instantiates an IncludeNode but wraps its render() in a
+    try/except in case the template doesn't exist.
+    """
+    def __init__(self, parser, token):
+        self.include_node = do_include(parser, token)
+
+    def render(self, context):
+        try:
+            return self.include_node.render(context)
+        except template.TemplateDoesNotExist:
+            return ''
+
+
+@register.tag('try_include')
+def try_include(parser, token):
+    """
+    Include the specified template but only if it exists.
+    """
+    return TryIncludeNode(parser, token)

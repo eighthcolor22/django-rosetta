@@ -24,6 +24,7 @@
         <div id="header">
             {% block header %}
             <div id="branding">
+                {% try_include 'admin/branding.html' %}
                 <h1 id="site-name"><a href="{% url 'rosetta-file-list' po_filter='project' %}">Rosetta</a> </h1>
             </div>
             {% endblock %}
